@@ -30,7 +30,7 @@ if __name__ == '__main__':
         raw_data_db: RawDataDB = RawDataDB.build_RawDataDB(parameters['input_data']['raw_data_db'], secrets)
         api = DebankAPI(raw_data_db, plex_db, parameters)
 
-        addresses = parameters['profile']['addresses']
+        addresses = parameters['profile']['backend_addresses']
         if sys.argv[1] == 'snapshot':
             refresh = True
             all_fetch = asyncio.run(safe_gather([api.fetch_snapshot(address, refresh=refresh)
