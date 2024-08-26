@@ -65,7 +65,6 @@ class DebankAPI:
         only update once every 'update_frequency' minutes
         '''
         updated_at = self.plex_db.last_updated(address, "snapshots")
-        snapshot = self.plex_db.query_table_at([address], timestamp, "snapshots")
 
         # retrieve cache for addresses that have been updated recently, and always if refresh=False
         max_updated = datetime.now(tz=timezone.utc) - timedelta(
@@ -78,7 +77,7 @@ class DebankAPI:
             else:
                 st.warning(
                     f"We only update once every {self.parameters['plex']['update_frequency']} minutes. {address} not refreshed")
-        return snapshot
+        return self.plex_db.query_table_at([address], timestamp, "snapshots")
 
     def parse_snapshot(self, dict_input: dict) -> pd.DataFrame:
         if not dict_input:
@@ -225,8 +224,8 @@ class DebankAPI:
                               'protocol': transactions['project_dict'][tx['project_id']]['name'] if tx[
                                   'project_id'] else
                               leg['to_addr' if side == -1 else 'from_addr'],
-                              'gas': tx['tx']['usd_gas_fee'] if 'usd_gas_fee' in tx['tx'] else 0.0,
-                              'type': tx['tx']['name'],
+                              'gas': tx['tx']['usd_gas_fee'] if (tx['tx'] and 'usd_gas_fee' in tx['tx']) else 0.0,
+                              'type': tx['tx']['name'] if (tx['tx'] and 'name' in tx['tx']) else "unknown",
                               'asset': leg['token_id'],
                               'amount': leg['amount'] * side}
                     if leg['token_id'] in transactions['token_dict']:
