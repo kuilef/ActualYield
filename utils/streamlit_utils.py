@@ -32,18 +32,23 @@ def load_parameters() -> dict:
     if parameter_file := st.sidebar.file_uploader("upload parameters", type=['yaml']):
         return yaml.safe_load(parameter_file)
     elif 'parameters' not in st.session_state:
-        defaults['profile'] = {'debank_key': st.sidebar.text_input("debank key",
+        defaults['profile']['debank_key'] = st.sidebar.text_input("debank key",
                                                                    value=st.secrets['debank_key']
                                                                    if 'debank_key' in st.secrets else '',
-                                                                   help="you think i am going to pay for you?")}
+                                                                   help="you think i am going to pay for you?")
         addresses = st.sidebar.text_area("addresses",
+                                         value=defaults['profile']['addresses'],
                                          help='Enter multiple strings, like a list')
 
         if (defaults['profile']['debank_key'] == '') or (not addresses):
             st.warning("Please enter your debank key and addresses")
             st.stop()
 
-        defaults['profile']['addresses'] = [address for address in eval(addresses) if address[:2] == "0x"]
+        try:
+            defaults['profile']['addresses'] = [address for address in eval(addresses) if address[:2] == "0x"]
+        except Exception as e:
+            st.error(f'{addresses} should be of the form ["0x...","0x..."]')
+            st.stop()
         return defaults
     else:
         return st.session_state.parameters
@@ -63,7 +68,7 @@ def prompt_snapshot_timestamp(plex_db: SQLiteDB, addresses: list[str]) -> int:
     timestamps = [x for x in set(list_timestamps[0]) if all(x in lst for lst in list_timestamps)]
 
     timestamp = next((ts for ts in sorted(timestamps, reverse=False)
-                          if ts >= result.timestamp()), max(timestamps))
+                          if ts >= result.timestamp()), max(timestamps) if timestamps else datetime.now().timestamp())
 
     st.write(f"Actual date of snapshot: {datetime.fromtimestamp(timestamp)}")
 
